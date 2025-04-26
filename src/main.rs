@@ -1,7 +1,6 @@
 #![no_main]
 #![no_std]
 
-use core::cell::RefCell;
 use embassy_executor::{main, Spawner};
 use embassy_stm32::{
     bind_interrupts,
@@ -12,14 +11,13 @@ use embassy_stm32::{
 };
 use panic_halt as _;
 use rmk::{
-    action::EncoderAction,
     channel::EVENT_CHANNEL,
     config::{ControllerConfig, KeyboardUsbConfig, RmkConfig},
     debounce::default_debouncer::DefaultDebouncer,
     futures::future::join3,
+    initialize_keymap,
     input_device::Runnable,
     keyboard::Keyboard,
-    keymap::KeyMap,
     light::LightController,
     matrix::Matrix,
     run_devices, run_rmk,
@@ -84,25 +82,19 @@ async fn main(_spawner: Spawner) {
     {
         let mut matrix =
             Matrix::<_, _, _, { keymap::ROW }, { keymap::COL }>::new(input_pins, output_pins, DefaultDebouncer::<{ keymap::ROW }, { keymap::COL }>::new());
-        let mut default_keymap = keymap::get_default_keymap();
         let rmk_config = RmkConfig {
             usb_config: keyboard_usb_config,
             ..Default::default()
         };
-        let keymap = KeyMap::new(
-            &mut default_keymap,
-            None::<&'_ mut [[EncoderAction; 1]; keymap::NUM_LAYER]>,
-            rmk_config.behavior_config.clone(),
-        )
-        .await;
-        let keymap_ref_cell = RefCell::new(keymap);
-        let mut keyboard = Keyboard::new(&keymap_ref_cell, rmk_config.behavior_config.clone());
+        let mut default_keymap = keymap::get_default_keymap();
+        let keymap = initialize_keymap(&mut default_keymap, rmk_config.behavior_config.clone()).await;
+        let mut keyboard = Keyboard::new(&keymap, rmk_config.behavior_config.clone());
         let light_controller: LightController<Output> = LightController::new(ControllerConfig::default().light_config);
 
         join3(
             run_devices! ((matrix) => EVENT_CHANNEL),
             keyboard.run(),
-            run_rmk(&keymap_ref_cell, usb_driver, light_controller, rmk_config),
+            run_rmk(&keymap, usb_driver, light_controller, rmk_config),
         )
         .await;
     }
