@@ -1,0 +1,12 @@
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+# replace STM32F103VETx with your chip as listed in `probe-rs chip list`
+runner="probe-rs run --chip STM32F103VETx"
+linker="flip-link"
+
+[build]
+target="thumbv7m-none-eabi"
+
+[env]
+# TODO drop "EMBASSY_EXECUTOR_TASK_ARENA_SIZE" env setting when "type_alias_impl_trait" feature lands stable Rust
+# https://docs.rs/embassy-executor/latest/embassy_executor/#task-arena
+EMBASSY_EXECUTOR_TASK_ARENA_SIZE="16384"
