@@ -73,7 +73,7 @@ async fn main(_spawner: Spawner) {
     };
     let (input_pins, output_pins) = macros::config_matrix_pins_stm32!(
         peripherals: p,
-        input: [PB2, PC6, PB0, PA4, PA0, PC4, PA2, PA6],
+        input: [PD10, PC6, PB0, PA4, PA0, PC4, PA2, PA6],
         output: [PC0, PD1, PC12, PE14, PC10, PE12, PE10, PA8, PE8, PC8, PD8, PB14, PD3, PB12, PB10, PE3]
     );
     let usb_driver = usb::Driver::new(p.USB, Irqs, p.PA12, p.PA11);
